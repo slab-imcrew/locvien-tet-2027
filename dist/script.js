@@ -119,3 +119,39 @@ adminClose.addEventListener('click',()=>adminDialog.close());
 adminDialog.addEventListener('click',event=>{if(event.target===adminDialog)adminDialog.close();});
 adminLoginForm.addEventListener('submit',async event=>{event.preventDefault();adminLoginError.textContent='';const password=document.querySelector('#admin-password').value;const response=await fetch('/api/admin/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password})});const data=await response.json();if(!response.ok){adminLoginError.textContent=data.error||'Đăng nhập thất bại.';return;}adminToken=data.token;sessionStorage.setItem('locvien_admin_token',adminToken);adminLogin.hidden=true;adminContent.hidden=false;await loadLeads();});
 document.querySelector('#admin-refresh').addEventListener('click',()=>loadLeads().catch(error=>showToast(error.message)));
+
+// CRM pipeline: Marketing -> Sale -> consultation history
+const crmMarketingFilter=document.querySelector('#crm-marketing-filter');
+const crmSalesFilter=document.querySelector('#crm-sales-filter');
+const activityPanel=document.querySelector('#activity-panel');
+const activityList=document.querySelector('#activity-list');
+const activityForm=document.querySelector('#activity-form');
+const statusLabels={new:'Mới',reviewing:'Đang xem',qualified:'Đủ điều kiện',handoff:'Đã chuyển Sale',unassigned:'Chưa nhận',assigned:'Đã nhận',in_progress:'Đang xử lý',won:'Đã chốt',lost:'Không tiếp tục'};
+const statusOptions=(type,current)=>{const values=type==='marketing'?['new','reviewing','qualified','handoff']:['unassigned','assigned','in_progress','won','lost'];return values.map(value=>`<option value="${value}"${value===current?' selected':''}>${statusLabels[value]}</option>`).join('');};
+function crmRenderLeads(leads){
+  adminCount.textContent=`${leads.length} khách hàng trong pipeline`;
+  adminRows.innerHTML=leads.length?leads.map(lead=>`<tr data-lead-id="${lead.id}"><td><strong>${escapeHtml(lead.name)}</strong><small>${escapeHtml(lead.company)} · ${escapeHtml(lead.phone)}</small><small>${Number(lead.amount||0).toLocaleString('vi-VN')}đ</small></td><td><select class="crm-status" data-field="marketing_status">${statusOptions('marketing',lead.marketing_status||'new')}</select></td><td><select class="crm-status" data-field="sales_status">${statusOptions('sales',lead.sales_status||'unassigned')}</select></td><td><input class="crm-assignee" value="${escapeHtml(lead.assigned_to||'')}" placeholder="Tên Sale"><button class="crm-handoff" type="button">Chuyển Sale</button></td><td>${lead.last_activity_at?new Date(lead.last_activity_at).toLocaleString('vi-VN'):'Chưa ghi nhận'}</td><td><button class="btn btn-small btn-gold crm-activity" type="button">Ghi tư vấn</button></td></tr>`).join(''):'<tr><td colspan="6">Chưa có khách hàng phù hợp.</td></tr>';
+}
+async function loadCrmLeads(){
+  if(!adminToken)return;
+  const params=new URLSearchParams();if(crmMarketingFilter.value)params.set('marketing_status',crmMarketingFilter.value);if(crmSalesFilter.value)params.set('sales_status',crmSalesFilter.value);
+  const response=await fetch(`/api/admin/leads?${params}`,{headers:{authorization:`Bearer ${adminToken}`}});const data=await response.json();if(!response.ok)throw new Error(data.error||'Không thể tải CRM.');crmRenderLeads(data.leads||[]);
+}
+async function updateCrmLead(id,patch){
+  const response=await fetch(`/api/admin/leads/${id}`,{method:'PATCH',headers:{'content-type':'application/json',authorization:`Bearer ${adminToken}`},body:JSON.stringify(patch)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Không thể cập nhật trạng thái.');await loadCrmLeads();
+}
+adminRows.addEventListener('change',event=>{if(!event.target.classList.contains('crm-status'))return;const row=event.target.closest('tr');updateCrmLead(row.dataset.leadId,{[event.target.dataset.field]:event.target.value}).catch(error=>showToast(error.message));});
+adminRows.addEventListener('click',event=>{
+  const row=event.target.closest('tr');if(!row)return;const id=row.dataset.leadId;
+  if(event.target.classList.contains('crm-handoff')){const assignee=row.querySelector('.crm-assignee').value.trim();updateCrmLead(id,{marketing_status:'handoff',sales_status:'assigned',assigned_to:assignee,activity_note:`Chuyển giao từ Marketing cho Sale${assignee?` (${assignee})`:''}`,created_by:'Marketing'}).catch(error=>showToast(error.message));}
+  if(event.target.classList.contains('crm-activity')){const leadName=row.querySelector('strong')?.textContent||'Khách hàng';document.querySelector('#activity-lead-id').value=id;document.querySelector('#activity-lead-name').textContent=leadName;activityPanel.hidden=false;loadActivities(id).catch(error=>showToast(error.message));}
+});
+async function loadActivities(id){const response=await fetch(`/api/admin/leads/${id}/activities`,{headers:{authorization:`Bearer ${adminToken}`}});const data=await response.json();if(!response.ok)throw new Error(data.error||'Không thể tải lịch sử.');activityList.innerHTML=data.activities.length?data.activities.map(item=>`<article class="activity-item"><div><strong>${item.channel.toUpperCase()}</strong><small>${new Date(item.created_at).toLocaleString('vi-VN')} · ${escapeHtml(item.created_by||'')}</small></div><p>${escapeHtml(item.note)}</p></article>`).join(''):'<p class="activity-empty">Chưa có lần tư vấn nào.</p>';}
+activityForm.addEventListener('submit',async event=>{event.preventDefault();const id=document.querySelector('#activity-lead-id').value;const body={channel:document.querySelector('#activity-channel').value,created_by:document.querySelector('#activity-by').value,note:document.querySelector('#activity-note').value};const response=await fetch(`/api/admin/leads/${id}/activities`,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${adminToken}`},body:JSON.stringify(body)});const data=await response.json();if(!response.ok){showToast(data.error||'Không thể lưu lần tư vấn.');return;}document.querySelector('#activity-note').value='';await loadActivities(id);await loadCrmLeads();showToast('Đã lưu lần tư vấn.');});
+document.querySelector('#activity-close').addEventListener('click',()=>{activityPanel.hidden=true;});
+crmMarketingFilter.addEventListener('change',()=>loadCrmLeads().catch(error=>showToast(error.message)));
+crmSalesFilter.addEventListener('change',()=>loadCrmLeads().catch(error=>showToast(error.message)));
+adminLaunch.addEventListener('click',()=>setTimeout(()=>loadCrmLeads().catch(error=>showToast(error.message)),250));
+adminLoginForm.addEventListener('submit',()=>setTimeout(()=>loadCrmLeads().catch(error=>showToast(error.message)),500));
+document.querySelector('#admin-refresh').addEventListener('click',()=>loadCrmLeads().catch(error=>showToast(error.message)));
+function renderLeads(leads){crmRenderLeads(leads);}

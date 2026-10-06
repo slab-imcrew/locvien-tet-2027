@@ -6,6 +6,9 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 });
 
 const clean = (value, max = 500) => String(value ?? "").trim().slice(0, max);
+const MARKETING_STATUSES = new Set(["new", "reviewing", "qualified", "handoff"]);
+const SALES_STATUSES = new Set(["unassigned", "assigned", "in_progress", "won", "lost"]);
+const CHANNELS = new Set(["zalo", "email", "call"]);
 
 function paymentText(name, phone) {
   const asciiName = clean(name, 80)
@@ -73,10 +76,52 @@ async function api(request, env) {
     return json({ id: result.meta.last_row_id, createdAt, payment: { ...PAYMENT, amount, description, qrUrl: qrUrl(description, amount) } }, 201);
   }
 
+  const leadMatch = url.pathname.match(/^\/api\/admin\/leads\/(\d+)(?:\/(activities))?$/);
+
+  if (leadMatch && request.method === "PATCH") {
+    if (!await validToken(request, secret)) return json({ error: "Unauthorized" }, 401);
+    if (!env.DB) return json({ error: "Database chưa được cấu hình." }, 503);
+    const leadId = Number(leadMatch[1]), body = await request.json().catch(() => ({}));
+    const current = await env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(leadId).first();
+    if (!current) return json({ error: "Không tìm thấy lead." }, 404);
+    const marketingStatus = MARKETING_STATUSES.has(body.marketing_status) ? body.marketing_status : current.marketing_status;
+    const salesStatus = SALES_STATUSES.has(body.sales_status) ? body.sales_status : current.sales_status;
+    const assignedTo = clean(body.assigned_to, 100);
+    const handedOffAt = marketingStatus === "handoff" ? (current.handed_off_at || new Date().toISOString()) : current.handed_off_at;
+    await env.DB.prepare("UPDATE leads SET marketing_status = ?, sales_status = ?, assigned_to = ?, handed_off_at = ? WHERE id = ?").bind(marketingStatus, salesStatus, assignedTo, handedOffAt, leadId).run();
+    if (body.activity_note) await env.DB.prepare("INSERT INTO lead_activities (lead_id, channel, note, created_by, created_at) VALUES (?, 'system', ?, ?, ?)").bind(leadId, clean(body.activity_note, 500), clean(body.created_by, 100), new Date().toISOString()).run();
+    return json({ ok: true });
+  }
+
+  if (leadMatch && leadMatch[2] === "activities" && request.method === "GET") {
+    if (!await validToken(request, secret)) return json({ error: "Unauthorized" }, 401);
+    const activities = await env.DB.prepare("SELECT * FROM lead_activities WHERE lead_id = ? ORDER BY created_at DESC").bind(Number(leadMatch[1])).all();
+    return json({ activities: activities.results });
+  }
+
+  if (leadMatch && leadMatch[2] === "activities" && request.method === "POST") {
+    if (!await validToken(request, secret)) return json({ error: "Unauthorized" }, 401);
+    if (!env.DB) return json({ error: "Database chưa được cấu hình." }, 503);
+    const leadId = Number(leadMatch[1]), body = await request.json().catch(() => ({}));
+    if (!CHANNELS.has(body.channel) || !clean(body.note, 1000)) return json({ error: "Vui lòng chọn kênh và ghi nội dung tư vấn." }, 400);
+    const createdAt = new Date().toISOString();
+    await env.DB.prepare("INSERT INTO lead_activities (lead_id, channel, note, created_by, created_at) VALUES (?, ?, ?, ?, ?)").bind(leadId, body.channel, clean(body.note, 1000), clean(body.created_by, 100), createdAt).run();
+    await env.DB.prepare("UPDATE leads SET last_activity_at = ? WHERE id = ?").bind(createdAt, leadId).run();
+    return json({ ok: true, createdAt }, 201);
+  }
+
   if (url.pathname === "/api/admin/leads" && request.method === "GET") {
     if (!await validToken(request, secret)) return json({ error: "Unauthorized" }, 401);
     if (!env.DB) return json({ error: "Database chưa được cấu hình." }, 503);
-    const { results } = await env.DB.prepare("SELECT * FROM leads ORDER BY created_at DESC LIMIT 200").all();
+    const marketing = url.searchParams.get("marketing_status");
+    const sales = url.searchParams.get("sales_status");
+    let query = "SELECT * FROM leads";
+    const conditions = [], bindings = [];
+    if (MARKETING_STATUSES.has(marketing)) { conditions.push("marketing_status = ?"); bindings.push(marketing); }
+    if (SALES_STATUSES.has(sales)) { conditions.push("sales_status = ?"); bindings.push(sales); }
+    if (conditions.length) query += ` WHERE ${conditions.join(" AND ")}`;
+    query += " ORDER BY COALESCE(last_activity_at, created_at) DESC LIMIT 200";
+    const { results } = await env.DB.prepare(query).bind(...bindings).all();
     return json({ leads: results });
   }
 
