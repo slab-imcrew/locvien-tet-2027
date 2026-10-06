@@ -65,7 +65,7 @@ async function api(request, env) {
     const body = await request.json().catch(() => ({}));
     const name = clean(body.name, 100), company = clean(body.company, 160), phone = clean(body.phone, 30);
     if (!name || !company || !phone) return json({ error: "Vui lòng điền đủ họ tên, doanh nghiệp và số điện thoại." }, 400);
-    const amount = Number(body.amount);
+    const amount = Number(String(body.amount ?? "").replace(/\D/g, ""));
     if (!Number.isSafeInteger(amount) || amount <= 0) return json({ error: "Vui lòng nhập giá trị đơn hàng hợp lệ để tạo QR." }, 400);
     const description = paymentText(name, phone), createdAt = new Date().toISOString();
     const result = await env.DB.prepare(`INSERT INTO leads (name, company, phone, quantity, budget, custom_need, note, payment_description, amount, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)

@@ -77,6 +77,8 @@ liveLeadForm.addEventListener('submit',async event=>{
   liveSubmit.disabled=true;liveSubmit.textContent='Đang ghi nhận...';
   const formData=new FormData(liveLeadForm);
   const payload=Object.fromEntries(formData.entries());
+  payload.amount=String(payload.amount||'').replace(/\D/g,'');
+  if(!payload.amount){showToast('Vui lòng nhập giá trị đơn hàng hợp lệ.');liveSubmit.disabled=false;liveSubmit.textContent='Gửi yêu cầu báo giá';return;}
   try{
     const response=await fetch('/api/leads',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
     const data=await response.json();
