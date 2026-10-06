@@ -93,6 +93,7 @@ document.querySelector('.copy-payment')?.addEventListener('click',async()=>{
   await navigator.clipboard?.writeText(latestPaymentDescription);showToast('Đã sao chép nội dung chuyển khoản.');
 });
 
+if(document.querySelector('#admin-dialog')){
 // Lightweight admin view protected by the Worker-issued session token.
 const adminDialog=document.querySelector('#admin-dialog');
 const adminLaunch=document.querySelector('#admin-launch');
@@ -155,3 +156,4 @@ adminLaunch.addEventListener('click',()=>setTimeout(()=>loadCrmLeads().catch(err
 adminLoginForm.addEventListener('submit',()=>setTimeout(()=>loadCrmLeads().catch(error=>showToast(error.message)),500));
 document.querySelector('#admin-refresh').addEventListener('click',()=>loadCrmLeads().catch(error=>showToast(error.message)));
 function renderLeads(leads){crmRenderLeads(leads);}
+}

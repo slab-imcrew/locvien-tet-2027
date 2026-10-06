@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>CRM nội bộ · Lộc Viên</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-page">
+  <div class="release-banner"><span>LỘC VIÊN</span><strong>CRM NỘI BỘ</strong><small>Marketing · Sale</small></div>
+  <header class="admin-topbar"><a class="brand" href="index.html"><span class="brand-mark">LV</span><span><strong>Lộc Viên</strong><small>Quay lại landing page</small></span></a><span class="admin-topbar-label">Quản lý khách hàng</span></header>
+  <main class="admin-main">
+    <section class="admin-shell admin-page-shell">
+      <div class="admin-login" id="admin-login"><p class="eyebrow dark">Khu vực nội bộ</p><h1 id="admin-title">CRM Marketing → Sale</h1><p>Đăng nhập để quản lý trạng thái khách hàng và lịch sử tư vấn.</p><form id="admin-login-form"><label>Mật khẩu<input id="admin-password" type="password" inputmode="numeric" autocomplete="current-password" required></label><button class="btn btn-gold" type="submit">Đăng nhập CRM</button><small class="admin-error" id="admin-login-error"></small></form></div>
+      <div class="admin-content" id="admin-content" hidden>
+        <div class="admin-heading"><div><p class="eyebrow dark">Pipeline Marketing → Sale</p><h1>Danh sách khách hàng</h1></div><div class="admin-actions"><button class="btn btn-small btn-gold" id="admin-refresh" type="button">Làm mới</button><button class="btn btn-small btn-outline" id="admin-logout" type="button">Đăng xuất</button></div></div>
+        <div class="crm-toolbar"><label>Lọc Marketing<select id="crm-marketing-filter"><option value="">Tất cả</option><option value="new">Mới</option><option value="reviewing">Đang xem</option><option value="qualified">Đủ điều kiện</option><option value="handoff">Đã chuyển Sale</option></select></label><label>Lọc Sale<select id="crm-sales-filter"><option value="">Tất cả</option><option value="unassigned">Chưa nhận</option><option value="assigned">Đã nhận</option><option value="in_progress">Đang xử lý</option><option value="won">Đã chốt</option><option value="lost">Không tiếp tục</option></select></label><span class="crm-hint">Marketing rà soát → gán Sale → ghi nhận từng lần tư vấn</span></div>
+        <p class="admin-count" id="admin-count"></p>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Khách hàng</th><th>Trạng thái Marketing</th><th>Trạng thái Sale</th><th>Người phụ trách</th><th>Lần tư vấn gần nhất</th><th>Thao tác</th></tr></thead><tbody id="admin-leads"></tbody></table></div>
+        <section class="activity-panel" id="activity-panel" hidden><div class="activity-panel-head"><div><p class="eyebrow dark">Lịch sử tư vấn</p><h2 id="activity-lead-name"></h2></div><button class="dialog-close activity-close" id="activity-close" type="button" aria-label="Đóng lịch sử">×</button></div><form id="activity-form" class="activity-form"><input type="hidden" id="activity-lead-id"><label>Kênh tư vấn<select id="activity-channel"><option value="zalo">Zalo</option><option value="email">Email</option><option value="call">Call</option></select></label><label>Người ghi nhận<input id="activity-by" placeholder="Tên sale/marketing"></label><label>Nội dung tư vấn<textarea id="activity-note" rows="3" placeholder="Đã liên hệ, nhu cầu, bước tiếp theo..." required></textarea></label><button class="btn btn-gold" type="submit">Lưu lần tư vấn</button></form><div class="activity-list" id="activity-list"></div></section>
+      </div>
+    </section>
+  </main>
+  <div class="toast" role="status" aria-live="polite"></div>
+  <script src="admin.js"></script>
+</body>
+</html>
