@@ -5,6 +5,9 @@ const count=document.querySelector('.result-count');
 const empty=document.querySelector('.empty-state');
 let activeBudget='all',activeAudience='all';
 
+filters.forEach(button=>button.setAttribute('aria-pressed',button.classList.contains('active')));
+needs.forEach(button=>button.setAttribute('aria-pressed','false'));
+
 function applyFilters(){
   let visible=0;
   products.forEach(card=>{
@@ -19,14 +22,16 @@ function applyFilters(){
 
 filters.forEach(button=>button.addEventListener('click',()=>{
   filters.forEach(item=>item.classList.remove('active'));
-  button.classList.add('active');activeBudget=button.dataset.budget;applyFilters();
+  filters.forEach(item=>item.setAttribute('aria-pressed','false'));
+  button.classList.add('active');button.setAttribute('aria-pressed','true');activeBudget=button.dataset.budget;applyFilters();
 }));
 
 needs.forEach(button=>button.addEventListener('click',()=>{
   const already=button.classList.contains('selected');
   needs.forEach(item=>item.classList.remove('selected'));
+  needs.forEach(item=>item.setAttribute('aria-pressed','false'));
   activeAudience=already?'all':button.dataset.audience;
-  if(!already)button.classList.add('selected');
+  if(!already){button.classList.add('selected');button.setAttribute('aria-pressed','true');}
   applyFilters();document.querySelector('#bo-suu-tap').scrollIntoView({behavior:'smooth'});
 }));
 
