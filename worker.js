@@ -1,4 +1,4 @@
-const PAYMENT = { bank: "ACB", account: "833336666", amount: 100000 };
+const PAYMENT = { bank: "ACB", account: "833336666" };
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -45,8 +45,8 @@ async function validToken(request, secret) {
   try { return JSON.parse(new TextDecoder().decode(fromBase64url(payload))).exp > Date.now(); } catch { return false; }
 }
 
-function qrUrl(description) {
-  const params = new URLSearchParams({ acc: PAYMENT.account, bank: PAYMENT.bank, amount: String(PAYMENT.amount), des: description, template: "compact", showinfo: "true", fullacc: "true" });
+function qrUrl(description, amount) {
+  const params = new URLSearchParams({ acc: PAYMENT.account, bank: PAYMENT.bank, amount: String(amount), des: description, template: "compact", showinfo: "true", fullacc: "true" });
   return `https://vietqr.app/img?${params.toString()}`;
 }
 
@@ -65,10 +65,12 @@ async function api(request, env) {
     const body = await request.json().catch(() => ({}));
     const name = clean(body.name, 100), company = clean(body.company, 160), phone = clean(body.phone, 30);
     if (!name || !company || !phone) return json({ error: "Vui lòng điền đủ họ tên, doanh nghiệp và số điện thoại." }, 400);
+    const amount = Number(body.amount);
+    if (!Number.isSafeInteger(amount) || amount <= 0) return json({ error: "Vui lòng nhập giá trị đơn hàng hợp lệ để tạo QR." }, 400);
     const description = paymentText(name, phone), createdAt = new Date().toISOString();
     const result = await env.DB.prepare(`INSERT INTO leads (name, company, phone, quantity, budget, custom_need, note, payment_description, amount, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(name, company, phone, clean(body.quantity, 60), clean(body.budget, 60), clean(body.custom, 80), clean(body.note, 1000), description, PAYMENT.amount, createdAt).run();
-    return json({ id: result.meta.last_row_id, createdAt, payment: { ...PAYMENT, description, qrUrl: qrUrl(description) } }, 201);
+      .bind(name, company, phone, clean(body.quantity, 60), clean(body.budget, 60), clean(body.custom, 80), clean(body.note, 1000), description, amount, createdAt).run();
+    return json({ id: result.meta.last_row_id, createdAt, payment: { ...PAYMENT, amount, description, qrUrl: qrUrl(description, amount) } }, 201);
   }
 
   if (url.pathname === "/api/admin/leads" && request.method === "GET") {

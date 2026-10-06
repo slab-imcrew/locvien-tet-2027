@@ -48,6 +48,11 @@ document.querySelectorAll('.order-btn').forEach(button=>button.addEventListener(
   showToast(`Đã chọn set ${button.dataset.product}. Lộc Viên sẽ hỗ trợ bạn ở bước tiếp theo.`);
   document.querySelector('#bao-gia').scrollIntoView({behavior:'smooth'});
 }));
+
+document.querySelectorAll('.order-btn').forEach(button=>button.addEventListener('click',()=>{
+  const amountField=document.querySelector('#order-amount');
+  if(amountField&&button.dataset.amount)amountField.value=button.dataset.amount;
+}));
 document.querySelector('#personal-order').addEventListener('click',()=>document.querySelector('#bo-suu-tap').scrollIntoView({behavior:'smooth'}));
 document.querySelector('#business-form').addEventListener('submit',event=>{
   event.preventDefault();
@@ -76,7 +81,7 @@ liveLeadForm.addEventListener('submit',async event=>{
     const response=await fetch('/api/leads',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
     const data=await response.json();
     if(!response.ok)throw new Error(data.error||'Không thể lưu thông tin.');
-    liveSuccess.hidden=false;paymentMessage.textContent='Bạn có thể quét mã QR dưới đây để chuyển khoản 100.000đ.';
+    liveSuccess.hidden=false;paymentMessage.textContent=`Bạn có thể quét mã QR dưới đây để chuyển khoản ${data.payment.amount.toLocaleString('vi-VN')}đ.`;
     paymentBox.hidden=false;paymentQr.src=data.payment.qrUrl;paymentDetails.textContent=`ACB · ${data.payment.account} · ${data.payment.amount.toLocaleString('vi-VN')}đ · ${data.payment.description}`;
     latestPaymentDescription=data.payment.description;liveSubmit.textContent='Đã ghi nhận yêu cầu';
   }catch(error){showToast(error.message);liveSubmit.disabled=false;liveSubmit.textContent='Gửi yêu cầu báo giá';}
