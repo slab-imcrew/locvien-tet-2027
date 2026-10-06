@@ -1,11 +1,21 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tet-loc-2027",
-  "compatibility_date": "2026-10-01",
-  "observability": {
-    "enabled": true
-  },
-  "assets": {
-    "directory": "dist"
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "tet-loc-2027",
+	"main": "worker.js",
+	"compatibility_date": "2026-10-01",
+	"observability": {
+		"enabled": true
+	},
+	"assets": {
+		"directory": "dist",
+		"binding": "ASSETS"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "locvien-leads",
+			"database_id": "2f9329c3-9ff5-4eb2-aec6-e22b5333dd19",
+			"migrations_dir": "migrations"
+		}
+	]
 }

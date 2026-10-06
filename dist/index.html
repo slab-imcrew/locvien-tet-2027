@@ -150,7 +150,7 @@
         <div class="form-grid"><label>Họ tên*<input name="name" required placeholder="Nguyễn Minh Anh"></label><label>Tên doanh nghiệp*<input name="company" required placeholder="Công ty ABC"></label><label>Số điện thoại*<input name="phone" type="tel" required pattern="[0-9 +]{9,15}" placeholder="09xx xxx xxx"></label><label>Số lượng dự kiến<select name="quantity"><option>30–50 set</option><option>51–100 set</option><option>101–300 set</option><option>Trên 300 set</option></select></label><label>Ngân sách / set<select name="budget"><option>Dưới 500.000đ</option><option>500.000–1.000.000đ</option><option>Trên 1.000.000đ</option><option>Cần tư vấn</option></select></label><label>Nhu cầu cá nhân hóa<select name="custom"><option>In logo & thiệp</option><option>Thiết kế hộp riêng</option><option>Đổi thành phần set</option><option>Chưa xác định</option></select></label></div>
         <label>Ghi chú<textarea name="note" rows="3" placeholder="Thời gian cần nhận, địa điểm giao hoặc yêu cầu khác..."></textarea></label>
         <button class="btn btn-gold submit-btn" type="submit">Gửi yêu cầu báo giá</button><small>Bằng việc gửi form, bạn đồng ý để Lộc Viên liên hệ tư vấn theo thông tin đã cung cấp.</small>
-        <div class="form-success" role="status" hidden><strong>Đã ghi nhận nhu cầu.</strong> Đây là bản demo giao diện; vui lòng kết nối CRM hoặc API để nhận lead thực tế.</div>
+        <div class="form-success" role="status" hidden><strong>Đã ghi nhận nhu cầu.</strong><span class="payment-message">Đang tạo thông tin chuyển khoản...</span><div class="payment-box" hidden><img class="payment-qr" alt="Mã QR chuyển khoản ACB"><div><strong>Chuyển khoản ACB</strong><small class="payment-details"></small><button class="text-link copy-payment" type="button">Sao chép nội dung chuyển khoản</button></div></div></div>
       </form>
     </section>
   </main>
@@ -158,6 +158,10 @@
   <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">LV</span><span><strong>Lộc Viên</strong><small>Quà Tết 2027</small></span></a><p>Trao quà tinh tuyển · Gửi trọn thành ý</p><a href="mailto:xinchao@locvien.vn">xinchao@locvien.vn</a><span>© 2027 Lộc Viên</span></footer>
 
   <div class="sticky-mobile"><a href="#bo-suu-tap">Chọn quà</a><a href="#bao-gia">Nhận báo giá</a></div>
+  <button class="admin-launch" id="admin-launch" type="button">Quản trị</button>
+  <dialog class="admin-dialog" id="admin-dialog" aria-labelledby="admin-title">
+    <div class="admin-shell"><button class="dialog-close" id="admin-close" type="button" aria-label="Đóng">×</button><div class="admin-login" id="admin-login"><p class="eyebrow dark">Khu vực nội bộ</p><h2 id="admin-title">Kiểm tra người điền form</h2><p>Nhập mật khẩu để xem danh sách lead.</p><form id="admin-login-form"><label>Mật khẩu<input id="admin-password" type="password" inputmode="numeric" autocomplete="current-password" required></label><button class="btn btn-gold" type="submit">Đăng nhập</button><small class="admin-error" id="admin-login-error"></small></form></div><div class="admin-content" id="admin-content" hidden><div class="admin-heading"><div><p class="eyebrow dark">Lead doanh nghiệp</p><h2>Danh sách yêu cầu</h2></div><button class="btn btn-small btn-gold" id="admin-refresh" type="button">Làm mới</button></div><p class="admin-count" id="admin-count"></p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Thời gian</th><th>Người liên hệ</th><th>Doanh nghiệp</th><th>Số điện thoại</th><th>Thanh toán</th></tr></thead><tbody id="admin-leads"></tbody></table></div></div></div>
+  </dialog>
   <div class="toast" role="status" aria-live="polite"></div>
   <script src="script.js"></script>
 </body>
